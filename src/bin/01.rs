@@ -1,41 +1,50 @@
+use itertools::Itertools;
+use rustc_hash::{FxBuildHasher, FxHashMap};
+
 advent_of_code::solution!(1);
 
-pub fn part_one(input: &str) -> Option<i64> {
-    let (mut left, mut right) = split_input(input);
-
-    left.sort();
-    right.sort();
+pub fn part_one(input: &str) -> Option<usize> {
+    let (left, right) = split_input(input);
 
     Some(
-        left.iter()
-            .zip(right.iter())
-            .map(|(l, r)| (r - l).abs())
+        left.into_iter()
+            .sorted_unstable()
+            .zip(right.into_iter().sorted_unstable())
+            .map(|(l, r)| l.abs_diff(r))
             .sum(),
     )
 }
 
-pub fn part_two(input: &str) -> Option<i64> {
+pub fn part_two(input: &str) -> Option<usize> {
     let (left, right) = split_input(input);
 
-    let mut score = 0;
+    let counts = right.into_iter().fold(
+        FxHashMap::with_capacity_and_hasher(left.len(), FxBuildHasher),
+        |mut counts, r| {
+            *counts.entry(r).or_insert(0) += 1;
+            counts
+        },
+    );
 
-    for l in left {
-        score += l * right.iter().filter(|&r| r == &l).count() as i64;
-    }
-
-    Some(score)
+    Some(
+        left.into_iter()
+            .fold(0, |score, l| score + l * counts.get(&l).unwrap_or(&0)),
+    )
 }
 
-fn split_input(input: &str) -> (Vec<i64>, Vec<i64>) {
+fn split_input(input: &str) -> (Vec<usize>, Vec<usize>) {
     input
         .lines()
         .map(|line| {
-            line.split_whitespace()
-                .map(|num| num.parse::<i64>().unwrap())
-                .collect::<Vec<_>>()
+            let mut nums = line.split_ascii_whitespace().map(parse_int);
+            (nums.next().unwrap(), nums.next().unwrap())
         })
-        .map(|v| (v[0], v[1]))
         .unzip()
+}
+
+// https://rust-malaysia.github.io/code/2020/07/11/faster-integer-parsing.html
+pub fn parse_int(s: &str) -> usize {
+    s.bytes().fold(0, |a, c| a * 10 + (c & 0x0f) as usize)
 }
 
 #[cfg(test)]
