@@ -1,3 +1,4 @@
+use advent_of_code::parse_int;
 use itertools::Itertools;
 use rustc_hash::{FxBuildHasher, FxHashMap};
 
@@ -10,7 +11,7 @@ pub fn part_one(input: &str) -> Option<usize> {
         left.into_iter()
             .sorted_unstable()
             .zip(right.into_iter().sorted_unstable())
-            .map(|(l, r)| l.abs_diff(r))
+            .map(|(left, right)| left.abs_diff(right))
             .sum(),
     )
 }
@@ -20,18 +21,18 @@ pub fn part_two(input: &str) -> Option<usize> {
 
     let counts = right.into_iter().fold(
         FxHashMap::with_capacity_and_hasher(left.len(), FxBuildHasher),
-        |mut counts, r| {
-            *counts.entry(r).or_insert(0) += 1;
+        |mut counts, right| {
+            *counts.entry(right).or_insert(0) += 1;
             counts
         },
     );
 
-    Some(
-        left.into_iter()
-            .fold(0, |score, l| score + l * counts.get(&l).unwrap_or(&0)),
-    )
+    Some(left.into_iter().fold(0, |score, left| {
+        score + left * counts.get(&left).unwrap_or(&0)
+    }))
 }
 
+#[inline(always)]
 fn split_input(input: &str) -> (Vec<usize>, Vec<usize>) {
     input
         .lines()
@@ -40,11 +41,6 @@ fn split_input(input: &str) -> (Vec<usize>, Vec<usize>) {
             (nums.next().unwrap(), nums.next().unwrap())
         })
         .unzip()
-}
-
-// https://rust-malaysia.github.io/code/2020/07/11/faster-integer-parsing.html
-pub fn parse_int(s: &str) -> usize {
-    s.bytes().fold(0, |a, c| a * 10 + (c & 0x0f) as usize)
 }
 
 #[cfg(test)]
