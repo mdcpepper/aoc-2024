@@ -14,6 +14,11 @@ doctest = false
 inherits = "release"
 debug = 1
 
+[profile.release]
+codegen-units = 1
+lto = "fat"
+panic = "abort"
+
 [features]
 dhat-heap = ["dhat"]
 today = ["chrono"]
@@ -30,3 +35,5 @@ tinyjson = "2.5.1"
 # Solution dependencies
 itertools = "0.13.0"
 rustc-hash = "2.1.0"
+rayon = "1.10.0"
+smallvec = "1.13.2"
