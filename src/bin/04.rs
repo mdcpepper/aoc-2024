@@ -1,3 +1,5 @@
+use rayon::prelude::*;
+
 advent_of_code::solution!(4);
 
 pub enum Direction {
@@ -30,10 +32,6 @@ impl Puzzle {
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.chars.len()
-    }
-
     pub fn iter(&self) -> impl Iterator<Item = &char> {
         self.chars.iter()
     }
@@ -63,10 +61,10 @@ impl Puzzle {
             return 0;
         }
 
-        for i in 0..=word_len {
+        for letter in word.iter().take(word_len + 1) {
             let this_char = self.get_char(y, x);
 
-            if this_char != Some(&word[i]) {
+            if this_char != Some(letter) {
                 return 0;
             }
 
@@ -111,34 +109,35 @@ pub fn part_one(input: &str) -> Option<u32> {
 
     let puzzle = Puzzle::new(input);
 
-    let mut count: u32 = 0;
-    let mut chars = puzzle.iter();
+    Some(
+        (0..puzzle.height)
+            .into_par_iter()
+            .map(|row| -> u32 {
+                let mut count = 0u32;
 
-    let mut counts_per_row = vec![0; puzzle.height];
+                for col in 0..puzzle.width {
+                    let index = row * puzzle.width + col;
+                    let c = puzzle.chars[index];
 
-    for cursor in 0..puzzle.len() {
-        let row = cursor / puzzle.width;
-        let col = cursor % puzzle.width;
-        let c = chars.next().unwrap();
+                    if c != 'X' {
+                        continue;
+                    }
 
-        if c != &'X' {
-            continue;
-        }
+                    count += (puzzle.find_word(Direction::North, row, col, &word)
+                        + puzzle.find_word(Direction::NorthEast, row, col, &word)
+                        + puzzle.find_word(Direction::East, row, col, &word)
+                        + puzzle.find_word(Direction::SouthEast, row, col, &word)
+                        + puzzle.find_word(Direction::South, row, col, &word)
+                        + puzzle.find_word(Direction::SouthWest, row, col, &word)
+                        + puzzle.find_word(Direction::West, row, col, &word)
+                        + puzzle.find_word(Direction::NorthWest, row, col, &word))
+                        as u32;
+                }
 
-        let num_found = puzzle.find_word(Direction::North, row, col, &word)
-            + puzzle.find_word(Direction::NorthEast, row, col, &word)
-            + puzzle.find_word(Direction::East, row, col, &word)
-            + puzzle.find_word(Direction::SouthEast, row, col, &word)
-            + puzzle.find_word(Direction::South, row, col, &word)
-            + puzzle.find_word(Direction::SouthWest, row, col, &word)
-            + puzzle.find_word(Direction::West, row, col, &word)
-            + puzzle.find_word(Direction::NorthWest, row, col, &word);
-
-        count += num_found as u32;
-        counts_per_row[row] += num_found;
-    }
-
-    Some(count)
+                count
+            })
+            .sum(),
+    )
 }
 
 pub fn part_two(_input: &str) -> Option<u32> {
